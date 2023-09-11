@@ -1,11 +1,5 @@
 function output = glmMod(Y,X,distribution, varargin)
 
-% to debug
-% Y = y_encode;
-% X = z_encode;
-% distribution = "NB"; % "Poisson" "NB"
-% reg = 1e-4;
-
 modelAlpha = false;
 G = [];
 reg = 1e-4;

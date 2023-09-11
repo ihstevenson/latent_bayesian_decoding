@@ -195,7 +195,7 @@ for r=1:length(ridx)
 end
 
 
-%% Fig 3B - example and average posteriors
+%% Fig 3E - example and average posteriors
 
 figure(25)
 subplot(1,2,1)
@@ -262,16 +262,16 @@ c = fminsearch(coverCost,-1);
 cxpall_pdglm = normlogP((1./(1+exp(-c)))*log(pall'));
 call(1)=c;
 
-pall=res_cv.lat_res_all.Poippp;
-coverCost = @(c) sum(coverage_r(normlogP((1./(1+exp(-c)))*log(pall')),xGrid,trial_x_full,coverVec)-coverVec).^2;
-c = fminsearch(coverCost,-1);
-cxpall_pdfa = normlogP((1./(1+exp(-c)))*log(pall'));
-call(2)=c;
-
 pall=res_cv.ols_res_all.NBppp;
 coverCost = @(c) sum(coverage_r(normlogP((1./(1+exp(-c)))*log(pall')),xGrid,trial_x_full,coverVec)-coverVec).^2;
 c = fminsearch(coverCost,-1);
 cxpall_nbdglm = normlogP((1./(1+exp(-c)))*log(pall'));
+call(2)=c;
+
+pall=res_cv.lat_res_all.Poippp;
+coverCost = @(c) sum(coverage_r(normlogP((1./(1+exp(-c)))*log(pall')),xGrid,trial_x_full,coverVec)-coverVec).^2;
+c = fminsearch(coverCost,-1);
+cxpall_pdfa = normlogP((1./(1+exp(-c)))*log(pall'));
 call(3)=c;
 
 pall=res_cv.lat_res_all.NBppp;
