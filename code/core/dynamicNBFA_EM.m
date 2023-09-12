@@ -10,7 +10,7 @@ Q0 = eye(q);
 mc = zeros(q,1);
 Ac = eye(q);
 Qc = eye(q)*1e-6;
-reg = 10;
+reg=10;
 
 if (~isempty(varargin))
     c = 1 ;
@@ -55,7 +55,7 @@ C_fit{1} = mod_nblat.A';
 c0 = C_fit{1}(:,1);
 
 alpha_fit = zeros(N,maxIter);
-alpha_fit(:,1) = ones(N,1)*0.01;
+alpha_fit(:,1) = mod_nblat.alpha;
 
 LLHD = zeros(maxIter, 1);
 LLHD(1) = mod_nblat.LLHD;
@@ -67,7 +67,7 @@ for ii = 2:maxIter
         offset = BETA_fit{ii-1}*Xtmp;
         [C_tmp,W,~,~,W01] = ppasmoo_nbdglm(c0,Q0,Ytmp,D_fit{ii-1},...
             alpha_fit(:,ii-1),mc,Ac,Qc,offset);
-        gradHess = @(vecBeta) gradHess_beta(vecBeta, c0,Q0,Ytmp,D_fit{ii-1},...
+        gradHess = @(vecBeta) gradHess_beta_nb(vecBeta, c0,Q0,Ytmp,D_fit{ii-1},...
             alpha_fit(:,ii-1),mc,Ac,Qc,offset);
         [vecC,~,~,~, ~] = newtonGH(gradHess,C_tmp(:),1e-6,1000,false);
         C_fit{ii} = reshape(vecC,[], T);
@@ -135,6 +135,7 @@ for ii = 2:maxIter
         end
         
     catch
+        fprintf('catch')
         ii = ii-1;
         lastwarn('')
         break;

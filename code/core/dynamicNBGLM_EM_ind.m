@@ -14,10 +14,10 @@ maxIter = 1000;
 ptmp = size(Xtmp,2);
 Ntmp = size(Ytmp,1);
 beta0 = zeros(ptmp,1);
-Q0 = eye(ptmp);
+Q0 = eye(ptmp)*10e-2;
 m = zeros(ptmp,1);
 A = eye(ptmp);
-Q = eye(ptmp)*1e-2;
+Q = eye(ptmp)*10e-3;
 % alpha = ones(Ntmp,1)*0.01;
 
 if (~isempty(varargin))

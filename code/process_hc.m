@@ -21,27 +21,27 @@ zGrid = xToZ(xGrid);
 T = size(y_encode,1);
 
 
-%% encoding model: PDGLM
+%% Poisson Dynamic GLM
+
+% encoding model: PDGLM
 stats = glmMod(y_encode,z_encode,"Poisson", 'reg', 10); 
 output_pdglm.Poi_BETA_ols = stats.BETA;
 output_pdglm.place_fields = exp(zGrid*output_pdglm.Poi_BETA_ols);
 output_pdglm.lambda = exp(z_encode*output_pdglm.Poi_BETA_ols);
 
-%% decoding PDGLM
-
+% decoding PDGLM
 offset = repmat(output_pdglm.Poi_BETA_ols(1,:)',1,T);
 B = output_pdglm.Poi_BETA_ols(2:end,:);
-
 x0 = zeros(p,1);
 Qx0 = eye(length(x0));
 mx = zeros(p,1);
 Ax = eye(p);
 Qx = eye(p)*1e-3;
+
 output_pdglm_decode = dynamicPGLM_EM(y_decode', B', offset, true,...
     'beta0', x0, 'Q0', Qx0, 'm',mx,'A',Ax,'Q',Qx);
 
-%% evaluate the Laplace approximation along grid...
-
+% evaluate the Laplace approximation along grid...
 pall = zeros(size(zGrid,1),T);
 for i=1:T
     pall(:,i) = mvnpdf(zGrid(:,2:end),output_pdglm_decode.beta(:,i)',output_pdglm_decode.W(:,:,i));
@@ -52,26 +52,26 @@ output_pdglm_decode.map = xGrid(i);
 
 
 
+%% Negative Binomial Dynamic GLM
 
-%% encoding model: NBDGLM
+% encoding model: NBDGLM
 stats = glmMod(y_encode,z_encode,"NB", 'reg', 10);
 output_nbdglm.NB_BETA_ols = stats.BETA;
 output_nbdglm.NB_alpha_ols = stats.ALPHA(1,:)';
 
-%% decoding NBDGLM
-
+% decoding NBDGLM
 offset = repmat(output_nbdglm.NB_BETA_ols(1,:)',1,T);
 B = output_nbdglm.NB_BETA_ols(2:end,:);
-
 x0 = zeros(p,1);
 Qx0 = eye(length(x0));
 mx = zeros(p,1);
 Ax = eye(p);
 Qx = eye(p)*1e-3;
+
 output_nbdglm_decode = dynamicNBGLM_EM(y_decode', B', offset, output_nbdglm.NB_alpha_ols, true,...
     'beta0', x0, 'Q0', Qx0, 'm',mx,'A',Ax,'Q',Qx);
 
-%% evaluate the Laplace approximation along grid...
+% evaluate the Laplace approximation along grid...
 pall = zeros(size(zGrid,1),T);
 for i=1:T
     pall(:,i) = mvnpdf(zGrid(:,2:end),output_nbdglm_decode.beta(:,i)',output_nbdglm_decode.W(:,:,i));
@@ -82,14 +82,14 @@ output_nbdglm_decode.map = xGrid(i);
 
 
 
+%% Poisson Dynamic GLLVM (PDFA)
 
-%% encoding model PFA
+% encoding model PFA
 output_pdfa = dynamicPFA_EM(y_encode',z_encode',1,true,'reg',10);
 Qx = cov(diff(z_encode(:,2:end)));
 Qx = diag(diag(Qx));
 
-%% decoding PFA
-
+% decoding PFA
 xc0 = [zeros(p,1);output_pdfa.c0];
 Q0 = blkdiag(eye(p), output_pdfa.Q0);
 mxc = [zeros(p,1); output_pdfa.mc];
@@ -100,7 +100,7 @@ offset = repmat(output_pdfa.BETA(:,1),1,T);
 output_pdfa_decode = dynamicPGLM_EM_ind(y_decode',[output_pdfa.BETA(:,2:end) output_pdfa.D],p, offset,true,...
     'beta0', xc0, 'Q0', Q0, 'm',mxc,'A',Axc,'Q',qxc); % independent version
 
-%% evaluate the Laplace approximation along grid...
+% evaluate the Laplace approximation along grid...
 pall = zeros(size(zGrid,1),T);
 for i=1:T
     pall(:,i) = mvnpdf(zGrid(:,2:end),output_pdfa_decode.beta(1:p,i)',output_pdfa_decode.W(1:p,1:p,i));
@@ -111,15 +111,15 @@ output_pdfa_decode.map = xGrid(i);
 
 
 
+%% Negative Binomial Dynamic GLLVM (NBDFA)
 
-%% encoding model NBFA
+% encoding model NBFA
 output_nbdfa = dynamicNBFA_EM(y_encode',z_encode',1,true);
 Qx = cov(diff(z_encode(:,2:end)));
 Qx = diag(diag(Qx));
 
-%% decoding NBFA
-
-xc0 = [zeros(p,1);output_nbdfa.c0];
+% decoding NBFA
+xc0 = [zeros(p,1); output_nbdfa.c0];
 Q0 = blkdiag(eye(p), output_nbdfa.Q0)*10e-3;
 mxc = [zeros(p,1); output_nbdfa.mc];
 Axc = blkdiag(eye(p), output_nbdfa.Ac);
@@ -129,7 +129,7 @@ offset = repmat(output_nbdfa.BETA(:,1),1,T);
 output_nbdfa_decode = dynamicNBGLM_EM_ind(y_decode', [output_nbdfa.BETA(:,2:end) output_nbdfa.D],p, offset, output_nbdfa.alpha, true,...
     'beta0', xc0, 'Q0', Q0, 'm',mxc,'A',Axc,'Q',qxc);
 
-%% evaluate the Laplace approximation along grid...
+% evaluate the Laplace approximation along grid...
 pall = zeros(size(zGrid,1),T);
 for i=1:T
     pall(:,i) = mvnpdf(zGrid(:,2:end),output_nbdfa_decode.beta(1:p,i)',output_nbdfa_decode.W(1:p,1:p,i));
@@ -190,10 +190,10 @@ call(4)=c;
 
 
 coverVec = linspace(0.001,0.999,256);
-cxp_coverage(1) = eval_coverage(cxpall_pdglm,xGrid,trial_x_full,coverVec);
-cxp_coverage(2) = eval_coverage(cxpall_nbdglm,xGrid,trial_x_full,coverVec);
-cxp_coverage(3) = eval_coverage(cxpall_pdfa,xGrid,trial_x_full,coverVec);
-cxp_coverage(4) = eval_coverage(cxpall_nbdfa,xGrid,trial_x_full,coverVec);
+cxp_coverage(1) = eval_coverage(cxpall_pdglm,xGrid,x_decode,coverVec);
+cxp_coverage(2) = eval_coverage(cxpall_nbdglm,xGrid,x_decode,coverVec);
+cxp_coverage(3) = eval_coverage(cxpall_pdfa,xGrid,x_decode,coverVec);
+cxp_coverage(4) = eval_coverage(cxpall_nbdfa,xGrid,x_decode,coverVec);
 
 % Fig 8C
 figure(26)
@@ -212,7 +212,8 @@ ylabel('Coverage')
 %% Figure 8A (visualize segment)
 % note: direction is decoded, but ignored in these plots
 
-xl = [4600 5200];
+xl = [1800 2200]; % shown in Fig
+xl = [1000 3000];
 figure(4)
 subplot(3,1,1)
 imagesc(output_pdglm_decode.pall(1:256,:)+flipud(output_pdglm_decode.pall(257:end,:)))
@@ -233,8 +234,8 @@ box off; set(gca,'TickDir','out')
 xlim(xl)
 
 subplot(3,1,3)
-imagesc(output_pdfa_decode.pall(1:256,:)+flipud(output_pdfa_decode.pall(257:end,:)))
-% imagesc(cxpall_pdfa(1:256,:)+flipud(cxpall_pdfa(257:end,:)))
+% imagesc(output_nbdfa_decode.pall(1:256,:)+flipud(output_nbdfa_decode.pall(257:end,:)))
+imagesc(cxpall_nbdfa(1:256,:)+flipud(cxpall_nbdfa(257:end,:)))
 hold on
 plot(position_realigned(time_range,1)*256,'r')
 hold off
